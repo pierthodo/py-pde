@@ -44,36 +44,17 @@ if TYPE_CHECKING:
 TField = TypeVar("TField", bound="FieldBase")
 
 
-class FieldBase(metaclass=ABCMeta):
-    """abstract base class for describing (discretized) fields
+class StateBase(metaclass=ABCMeta):
+    """abstract base class for describing the state of a simulation """
 
-    Attributes:
-        label (str):
-            Name of the field
-    """
+    _subclasses: Dict[str, "StateBase"] = {}  # all classes inheriting from this
 
-    _subclasses: Dict[str, "FieldBase"] = {}  # all classes inheriting from this
-    readonly = False
-
-    def __init__(
-        self,
-        grid: GridBase,
-        data: OptionalArrayLike = None,
-        *,
-        label: Optional[str] = None,
-    ):
+    def __init__(self, data: OptionalArrayLike = None):
         """
         Args:
-            grid (:class:`~pde.grids.GridBase`):
-                Grid defining the space on which this field is defined
-            data (array, optional):
-                Field values at the support points of the grid
-            label (str, optional):
-                Name of the field
+            data (array, optional): Data describing the state
         """
-        self._grid = grid
         self._data: np.ndarray = data
-        self.label = label
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def __init_subclass__(cls, **kwargs):  # @NoSelf
@@ -84,7 +65,7 @@ class FieldBase(metaclass=ABCMeta):
     @classmethod
     def from_state(
         cls, attributes: Dict[str, Any], data: np.ndarray = None
-    ) -> "FieldBase":
+    ) -> "StateBase":
         """create a field from given state.
 
         Args:
@@ -103,7 +84,7 @@ class FieldBase(metaclass=ABCMeta):
         return cls._subclasses[class_name].from_state(attributes, data)
 
     @classmethod
-    def from_file(cls, filename: str) -> "FieldBase":
+    def from_file(cls, filename: str) -> "StateBase":
         """create field by reading file
 
         Args:
@@ -130,6 +111,37 @@ class FieldBase(metaclass=ABCMeta):
                     "file but no FieldCollection is expected"
                 )
         return obj
+
+
+class FieldBase(StateBase, metaclass=ABCMeta):
+    """abstract base class for describing (discretized) fields
+
+    Attributes:
+        label (str):
+            Name of the field
+    """
+
+    readonly = False
+
+    def __init__(
+        self,
+        grid: GridBase,
+        data: OptionalArrayLike = None,
+        *,
+        label: Optional[str] = None,
+    ):
+        """
+        Args:
+            grid (:class:`~pde.grids.GridBase`):
+                Grid defining the space on which this field is defined
+            data (array, optional):
+                Field values at the support points of the grid
+            label (str, optional):
+                Name of the field
+        """
+        self._grid = grid
+        super().__init__(data=data)
+        self.label = label
 
     @classmethod
     def _from_hdf_dataset(cls, dataset) -> "FieldBase":
