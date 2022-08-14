@@ -235,19 +235,45 @@ class Boundaries(list):
 
     def make_ghost_cell_setter(self) -> GhostCellSetter:
         """return function that sets the ghost cells on a full array"""
-        ghost_cell_setters = tuple(b.make_ghost_cell_setter() for b in self)
+        from pde.tools.numba import jit
+
+        ghost_cell_setters = tuple(jit(b.make_ghost_cell_setter()) for b in self)
+
+        # import sys
+        #
+        # sys.path.insert(0, "/Users/dzwicker/Code/py-pde/submodules/pypragma")
+        # sys.path.insert(0, "/Users/dzwicker/Code/py-pde/submodules/miniutils")
+        #
+        # from pde.tools.numba import jit
+        # import pragma
+        #
+        # @jit
+        # @pragma.deindex(ghost_cell_setters, "ghost_cell_setters")
+        # @pragma.unroll(num_fns=len(ghost_cell_setters))
+        # def set_ghost_cells(data_full: np.ndarray, args=None) -> None:
+        #     for i in range(num_fns):
+        #         ghost_cell_setters[i](data_full, args=args)
+        #
+        # return set_ghost_cells
 
         # TODO: use numba.literal_unroll
         # # get the setters for all axes
         #
-        # from pde.tools.numba import jit
-        #
+        import numba as nb
+
         # @jit
         # def set_ghost_cells(data_full: np.ndarray, args=None) -> None:
         #     for f in nb.literal_unroll(ghost_cell_setters):
         #         f(data_full, args=args)
-        #
-        # return set_ghost_cells
+
+        it = tuple(range(len(ghost_cell_setters)))
+        @jit
+        def set_ghost_cells(data_full: np.ndarray, args=None) -> None:
+            for i in nb.literal_unroll(it):
+                f = ghost_cell_setters[i]
+                f(data_full, args=args)
+
+        return set_ghost_cells
 
         def chain(
             fs: Sequence[GhostCellSetter], inner: GhostCellSetter = None

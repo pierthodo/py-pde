@@ -1,0 +1,6 @@
+[submodule "submodules/pypragma"]
+	path = submodules/pypragma
+	url = https://github.com/scnerd/pypragma
+[submodule "submodules/miniutils"]
+	path = submodules/miniutils
+	url = https://github.com/scnerd/miniutils
