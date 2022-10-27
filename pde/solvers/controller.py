@@ -187,6 +187,7 @@ class Controller:
 
         # evolve the system from t_start to t_end
         t = t_start
+        acc = 0
         self._logger.debug(f"Start simulation at t={t}")
         try:
             while t < t_end:
@@ -202,7 +203,9 @@ class Controller:
                 t = stepper(state, t, t_break)
 
                 prof_start_tracker = get_time()
-                profiler["solver"] += prof_start_tracker - prof_start_solve
+                if acc != 0:
+                    profiler["solver"] += prof_start_tracker - prof_start_solve
+                acc += 1
 
         except StopIteration as err:
             # iteration has been interrupted by a tracker
@@ -228,7 +231,6 @@ class Controller:
             except StopIteration as err:
                 # error detected in the final handling of the tracker
                 msg_level, msg = handle_stop_iteration(err, t)
-
         # calculate final statistics
         profiler["tracker"] += get_time() - prof_start_tracker
         duration = datetime.datetime.now() - solver_start
