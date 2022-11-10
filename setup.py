@@ -35,7 +35,6 @@ setup(
     install_requires=[
         "matplotlib>=3.1.0",
         "numba>=0.56.0",
-        "numpy>=1.22.0",
         "scipy>=1.4.0",
         "sympy>=1.5.0",
         "tqdm>=4.60",
